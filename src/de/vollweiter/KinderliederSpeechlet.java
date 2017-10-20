@@ -47,8 +47,10 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
                 // When currently playing an audio file, pause intent is invoked by "stop utterance" >:(
             case "AMAZON.PauseIntent":
                 return stopPlaybackResponse();
+            case "SpecificSongIntent":
+                return playSpecificSong();
             case "RandomSongIntent":
-                return playSong();
+                return playRandomSong();
             default:
                 throw new SpeechletException("Invalid Intent");
 
@@ -113,7 +115,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         return SpeechletResponse.newAskResponse(speech, reprompt, card);
     }
 
-    private SpeechletResponse playSong() {
+    private SpeechletResponse playSpecificSong() {
 
         String speechText = "Viel Spaß mit dem Lied";
 
@@ -129,6 +131,46 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         Stream stream = new Stream();
         stream.setToken("1234");
         stream.setUrl("https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/01_-_Kinder_wollen_singen_-_Alle_meine_Entchen.mp3");
+        stream.setOffsetInMilliseconds(0);
+
+        AudioItem audioItem = new AudioItem();
+        audioItem.setStream(stream);
+
+        PlayDirective playDirective = new PlayDirective();
+        playDirective.setAudioItem(audioItem);
+        playDirective.setPlayBehavior(PlayBehavior.REPLACE_ALL);
+
+
+        List<Directive> directives = new ArrayList<>();
+        directives.add(playDirective);
+
+        SpeechletResponse response = new SpeechletResponse();
+        response.setOutputSpeech(speech);
+        response.setDirectives(directives);
+        response.setNullableShouldEndSession(true);
+        response.setCard(card);
+
+        return response;
+    }
+
+    private SpeechletResponse playRandomSong() {
+
+        String speechText = "Viel Spaß mit dem Lied";
+
+        // Create the Simple card content.
+        SimpleCard card = new SimpleCard();
+        card.setTitle("Kinderlieder");
+        card.setContent(speechText);
+
+        // Create the plain text output.
+        PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
+        speech.setText(speechText);
+
+        AudioFileReference audioFileReference = new AudioFileReference();
+
+        Stream stream = new Stream();
+        stream.setToken("1234");
+        stream.setUrl(audioFileReference.getRandomAudioFile());
         stream.setOffsetInMilliseconds(0);
 
         AudioItem audioItem = new AudioItem();
