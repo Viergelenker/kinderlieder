@@ -2,6 +2,7 @@ package de.vollweiter;
 
 import com.amazon.speech.json.SpeechletRequestEnvelope;
 import com.amazon.speech.slu.Intent;
+import com.amazon.speech.slu.entityresolution.Resolution;
 import com.amazon.speech.speechlet.*;
 import com.amazon.speech.speechlet.interfaces.audioplayer.AudioItem;
 import com.amazon.speech.speechlet.interfaces.audioplayer.AudioPlayer;
@@ -19,6 +20,7 @@ import java.util.List;
 
 public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
+
     //////////////////////////////////
     // Speechlet methods
     //////////////////////////////////
@@ -29,7 +31,6 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
     @Override
     public SpeechletResponse onLaunch(LaunchRequest request, Session session) throws SpeechletException {
-
         // Which song
         return getWelcomeResponse();
     }
@@ -41,16 +42,44 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
         switch (intentName) {
             case "AMAZON.CancelIntent":
-                return stopPlaybackResponse();
+                return stopResponse();
             case "AMAZON.StopIntent":
-                return stopPlaybackResponse();
-                // When currently playing an audio file, pause intent is invoked by "stop utterance" >:(
+                return stopResponse();
             case "AMAZON.PauseIntent":
+                // When currently playing an audio file, pause intent is invoked by "stop utterance" >:(
                 return stopPlaybackResponse();
-            case "SpecificSongIntent":
-                return playSpecificSong();
             case "RandomSongIntent":
                 return playRandomSong();
+            case "EntenIntent":
+                return playSpecificSong(0);
+            case "VoegelIntent":
+                return playSpecificSong(1);
+            case "MauerIntent":
+                return playSpecificSong(2);
+            case "WiesenIntent":
+                return playSpecificSong(3);
+            case "KuchenIntent":
+                return playSpecificSong(4);
+            case "JakobIntent":
+                return playSpecificSong(5);
+            case "WandernIntent":
+                return playSpecificSong(6);
+            case "KuckuckIntent":
+                return playSpecificSong(7);
+            case "AffenIntent":
+                return playSpecificSong(8);
+            case "MondIntent":
+                return playSpecificSong(9);
+            case "GedankenIntent":
+                return playSpecificSong(10);
+            case "HandwerkerIntent":
+                return playSpecificSong(11);
+            case "VogelhochzeitIntent":
+                return playSpecificSong(12);
+            case "ChinesenIntent":
+                return playSpecificSong(13);
+            case "MaennleinIntent":
+                return playSpecificSong(14);
             default:
                 throw new SpeechletException("Invalid Intent");
 
@@ -94,8 +123,8 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
     // Services
     //////////////////////////////////
     private SpeechletResponse getWelcomeResponse() {
-        String speechText = "Hallo, was möchtest du hören?";
-        String repromptText = "Sag mir einfach ein bestimmtes Lied, oder zufällige Wiedergabe";
+        String speechText = "Hallo! Was möchtest du hören?";
+        String repromptText = "Sag mir einfach den Namen eines Lied, oder zufällige Wiedergabe";
 
         // Create the Simple card content with the repromt text.
         SimpleCard card = new SimpleCard();
@@ -115,7 +144,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         return SpeechletResponse.newAskResponse(speech, reprompt, card);
     }
 
-    private SpeechletResponse playSpecificSong() {
+    private SpeechletResponse playSpecificSong(int songNumber) {
 
         String speechText = "Viel Spaß mit dem Lied";
 
@@ -130,7 +159,11 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
         Stream stream = new Stream();
         stream.setToken("1234");
-        stream.setUrl("https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/01_-_Kinder_wollen_singen_-_Alle_meine_Entchen.mp3");
+        try {
+            stream.setUrl(new AudioFileReference().getSpecificAudioFile(songNumber));
+        } catch (SpeechletException e) {
+            e.printStackTrace();
+        }
         stream.setOffsetInMilliseconds(0);
 
         AudioItem audioItem = new AudioItem();
@@ -155,7 +188,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
     private SpeechletResponse playRandomSong() {
 
-        String speechText = "Viel Spaß mit dem Lied";
+        String speechText = "Zufälliges Lied ausgewählt";
 
         // Create the Simple card content.
         SimpleCard card = new SimpleCard();
@@ -166,11 +199,9 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
         speech.setText(speechText);
 
-        AudioFileReference audioFileReference = new AudioFileReference();
-
         Stream stream = new Stream();
         stream.setToken("1234");
-        stream.setUrl(audioFileReference.getRandomAudioFile());
+        stream.setUrl(new AudioFileReference().getRandomAudioFile());
         stream.setOffsetInMilliseconds(0);
 
         AudioItem audioItem = new AudioItem();
@@ -193,28 +224,26 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         return response;
     }
 
-    private SpeechletResponse getHelloResponse() {
-        String speechText = "Willkommen zu Kinderlieder. Sagen Sie Start für ein zufälliges Lied";
+    private SpeechletResponse stopPlaybackResponse() {
 
-        // Create the Simple card content.
-        SimpleCard card = new SimpleCard();
-        card.setTitle("Kinderlieder");
-        card.setContent(speechText);
-
+        String speechText = "Okay, Wiedergabe angehalten.";
         // Create the plain text output.
         PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
         speech.setText(speechText);
 
-        // Create reprompt
-        Reprompt reprompt = new Reprompt();
-        reprompt.setOutputSpeech(speech);
+        List<Directive> directives = new ArrayList<>();
+        directives.add(new StopDirective());
 
-        return SpeechletResponse.newAskResponse(speech, reprompt, card);
+        SpeechletResponse response = new SpeechletResponse();
+        response.setDirectives(directives);
+        response.setOutputSpeech(speech);
+
+        return response;
     }
 
-    private SpeechletResponse stopPlaybackResponse() {
+    private SpeechletResponse stopResponse() {
 
-        String speechText = "Okay, Wiedergabe angehalten.";
+        String speechText = "Okay";
         // Create the plain text output.
         PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
         speech.setText(speechText);
