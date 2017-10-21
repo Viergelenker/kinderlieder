@@ -11,15 +11,17 @@ import com.amazon.speech.speechlet.interfaces.audioplayer.Stream;
 import com.amazon.speech.speechlet.interfaces.audioplayer.directive.PlayDirective;
 import com.amazon.speech.speechlet.interfaces.audioplayer.directive.StopDirective;
 import com.amazon.speech.speechlet.interfaces.audioplayer.request.*;
+import com.amazon.speech.speechlet.interfaces.system.SystemInterface;
+import com.amazon.speech.speechlet.interfaces.system.SystemState;
 import com.amazon.speech.ui.PlainTextOutputSpeech;
 import com.amazon.speech.ui.Reprompt;
 import com.amazon.speech.ui.SimpleCard;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
-
 
     //////////////////////////////////
     // Speechlet methods
@@ -48,6 +50,8 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
             case "AMAZON.PauseIntent":
                 // When currently playing an audio file, pause intent is invoked by "stop utterance" >:(
                 return stopPlaybackResponse();
+            case "AMAZON.HelpIntent":
+                return helpResponse();
             case "RandomSongIntent":
                 return playRandomSong();
             case "EntenIntent":
@@ -101,6 +105,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
     @Override
     public SpeechletResponse onPlaybackFinished(SpeechletRequestEnvelope<PlaybackFinishedRequest> requestEnvelope) {
+        getNextSongResponse();
         return null;
     }
 
@@ -114,8 +119,19 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         return null;
     }
 
+    /**
+     * Used when the audio stream is stopped by the stop directive.
+     *
+     * @param requestEnvelope
+     *            the request envelope containing the playback nearly failed request to handle
+     * @return
+     */
     @Override
     public SpeechletResponse onPlaybackStopped(SpeechletRequestEnvelope<PlaybackStoppedRequest> requestEnvelope) {
+
+        // SystemState state = requestEnvelope.getContext().getState(SystemInterface.class, SystemState.class);
+        // storeOffset(state.getUser().getUserId(), requestEnvelope.getRequest().getOffsetInMilliseconds());
+
         return null;
     }
 
@@ -123,8 +139,58 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
     // Services
     //////////////////////////////////
     private SpeechletResponse getWelcomeResponse() {
-        String speechText = "Hallo! Was möchtest du hören?";
-        String repromptText = "Sag mir einfach den Namen eines Lied, oder zufällige Wiedergabe";
+        String speechText = "Hallo! Welches Lied möchtest du hören?";
+        String repromptText = "Sag einfach zufälliges Lied oder den Namen eines bestimmten.";
+
+        // Create the Simple card content with the repromt text.
+        SimpleCard card = new SimpleCard();
+        card.setTitle("Kinderlieder");
+        card.setContent(repromptText);
+
+        // Create the plain text output.
+        PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
+        speech.setText(speechText);
+        PlainTextOutputSpeech repromptOutput = new PlainTextOutputSpeech();
+        repromptOutput.setText(repromptText);
+
+        // Create reprompt
+        Reprompt reprompt = new Reprompt();
+        reprompt.setOutputSpeech(repromptOutput);
+
+        return SpeechletResponse.newAskResponse(speech, reprompt, card);
+    }
+
+    private SpeechletResponse helpResponse() {
+        String speechText = "Die Namen aller Lieder findest du auf der Karte in der Alexa App. Sage zufälliges Lied oder den Namen von einem bestimmten.";
+        String repromptText = "Sag einfach zufälliges Lied oder den Namen eines bestimmten. Die Namen aller Lieder findest du in der Alexa App";
+
+        // Create the Simple card content with the repromt text.
+        SimpleCard card = new SimpleCard();
+        card.setTitle("Kinderlieder");
+
+        AudioFileReference audioFileReference = new AudioFileReference();
+        List<String> songTitles = new ArrayList<>();
+        for(int i = 0; i < 14; i++) {
+            songTitles.add(audioFileReference.getNameOfSong(i));
+        }
+        card.setContent(songTitles.toString());
+
+        // Create the plain text output.
+        PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
+        speech.setText(speechText);
+        PlainTextOutputSpeech repromptOutput = new PlainTextOutputSpeech();
+        repromptOutput.setText(repromptText);
+
+        // Create reprompt
+        Reprompt reprompt = new Reprompt();
+        reprompt.setOutputSpeech(repromptOutput);
+
+        return SpeechletResponse.newAskResponse(speech, reprompt, card);
+    }
+
+    private SpeechletResponse getNextSongResponse() {
+        String speechText = "Welches Lied möchtest du jetzt hören?";
+        String repromptText = "Sag einfach zufälliges Lied oder den Namen eines bestimmten.";
 
         // Create the Simple card content with the repromt text.
         SimpleCard card = new SimpleCard();
@@ -211,7 +277,6 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         playDirective.setAudioItem(audioItem);
         playDirective.setPlayBehavior(PlayBehavior.REPLACE_ALL);
 
-
         List<Directive> directives = new ArrayList<>();
         directives.add(playDirective);
 
@@ -230,6 +295,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         // Create the plain text output.
         PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
         speech.setText(speechText);
+
 
         List<Directive> directives = new ArrayList<>();
         directives.add(new StopDirective());

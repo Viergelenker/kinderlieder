@@ -9,7 +9,7 @@ import java.util.Random;
 public class AudioFileReference {
 
     private final String alleMeineEntchen = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/01_-_Kinder_wollen_singen_-_Alle_meine_Entchen.mp3";
-    private final String alleVögelSindSchonDa = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/02_-_Kinder_wollen_singen_-_Alle_Voegel_sind_schon_da.mp3";
+    private final String alleVoegelSindSchonDa = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/02_-_Kinder_wollen_singen_-_Alle_Voegel_sind_schon_da.mp3";
     private final String aufDerMauer = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/03_-_Kinder_wollen_singen_-_Auf_der_Mauer_auf_der_Lauer.mp3";
     private final String aufUnsrerWiese = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/04_-_Kinder_wollen_singen_-_Auf_unsrer_Wiese_gehet_was.mp3";
     private final String backeBackeKuchen = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/05_-_Kinder_wollen_singen_-_Backe_backe_Kuchen.mp3";
@@ -22,13 +22,29 @@ public class AudioFileReference {
     private final String dieHandwerker = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/12_-_Kinder_wollen_singen_-_Die_Handwerker.mp3";
     private final String dieVogelhochzeit = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/13_-_Kinder_wollen_singen_-_Die_Vogelhochzeit.mp3";
     private final String dreiChinesenMitDemKontrabass = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/14_-_Kinder_wollen_singen_-_3_Chinesen_mit_dem_Kontrabass.mp3";
-    private final String einMännleinStehtImWalde = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/15_-_Kinder_wollen_singen_-_Ein_Maennlein_steht_im_Walde.mp3";
+    private final String einMaennleinStehtImWalde = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/15_-_Kinder_wollen_singen_-_Ein_Maennlein_steht_im_Walde.mp3";
+
+    private final String alleMeineEntchenTitle = "Alle meine Entchen";
+    private final String alleVoegelSindSchonDaTitle = "Alle Vögel sind schon da";
+    private final String aufDerMauerTitle = "Auf der Mauer auf der Lauer";
+    private final String aufUnsrerWieseTitle = "Auf unserer Wiese";
+    private final String backeBackeKuchenTitle = "Backe backe Kuchen";
+    private final String bruderJakobTitle = "Bruder Jakob";
+    private final String dasWandernTitle = "Das Wandern ist des Müllers Lust";
+    private final String derKuckuckUndDerEselTitle = "Der Kuckuck und der Esel";
+    private final String dieAffenTitle = "Die Affen rasen durch den Wald";
+    private final String derMondIstAufgegangenTitle = "Der Mond ist aufgegangen";
+    private final String dieGedankenSindFreiTitle = "Die Gedanken sind frei";
+    private final String dieHandwerkerTitle = "Die Handwerker";
+    private final String dieVogelhochzeitTitle = "Die Vogelhochzeit";
+    private final String dreiChinesenMitDemKontrabassTitle = "Drei Chinesen mit dem Kontrabass";
+    private final String einMaennleinStehtImWaldeTitle = "Ein Männlein steht im Walde";
 
 
     public List<String> getAllAudioFiles() {
         List<String> audioFilesList = new ArrayList<>();
         audioFilesList.add(alleMeineEntchen);
-        audioFilesList.add(alleVögelSindSchonDa);
+        audioFilesList.add(alleVoegelSindSchonDa);
         audioFilesList.add(aufDerMauer);
         audioFilesList.add(aufUnsrerWiese);
         audioFilesList.add(backeBackeKuchen);
@@ -41,7 +57,7 @@ public class AudioFileReference {
         audioFilesList.add(dieHandwerker);
         audioFilesList.add(dieVogelhochzeit);
         audioFilesList.add(dreiChinesenMitDemKontrabass);
-        audioFilesList.add(einMännleinStehtImWalde);
+        audioFilesList.add(einMaennleinStehtImWalde);
 
         return audioFilesList;
     }
@@ -63,7 +79,7 @@ public class AudioFileReference {
             case 0:
                 return alleMeineEntchen;
             case 1:
-                return alleVögelSindSchonDa;
+                return alleVoegelSindSchonDa;
             case 2:
                 return aufDerMauer;
             case 3:
@@ -89,10 +105,47 @@ public class AudioFileReference {
             case 13:
                 return dreiChinesenMitDemKontrabass;
             case 14:
-                return einMännleinStehtImWalde;
+                return einMaennleinStehtImWalde;
             default:
                 throw new SpeechletException("Dieses Lied kenne ich nicht");
 
+        }
+    }
+
+    public String getNameOfSong(int songNumber) {
+        switch (songNumber) {
+            case 0:
+                return alleMeineEntchenTitle;
+            case 1:
+                return alleVoegelSindSchonDaTitle;
+            case 2:
+                return aufDerMauerTitle;
+            case 3:
+                return aufUnsrerWieseTitle;
+            case 4:
+                return backeBackeKuchenTitle;
+            case 5:
+                return bruderJakobTitle;
+            case 6:
+                return dasWandernTitle;
+            case 7:
+                return derKuckuckUndDerEselTitle;
+            case 8:
+                return dieAffenTitle;
+            case 9:
+                return derMondIstAufgegangenTitle;
+            case 10:
+                return dieGedankenSindFreiTitle;
+            case 11:
+                return dieHandwerkerTitle;
+            case 12:
+                return dieVogelhochzeitTitle;
+            case 13:
+                return dreiChinesenMitDemKontrabassTitle;
+            case 14:
+                return einMaennleinStehtImWaldeTitle;
+            default:
+                return "Kein Titel";
         }
     }
 }
