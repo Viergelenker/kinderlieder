@@ -2,7 +2,6 @@ package de.vollweiter;
 
 import com.amazon.speech.json.SpeechletRequestEnvelope;
 import com.amazon.speech.slu.Intent;
-import com.amazon.speech.slu.entityresolution.Resolution;
 import com.amazon.speech.speechlet.*;
 import com.amazon.speech.speechlet.interfaces.audioplayer.AudioItem;
 import com.amazon.speech.speechlet.interfaces.audioplayer.AudioPlayer;
@@ -16,19 +15,26 @@ import com.amazon.speech.speechlet.interfaces.system.SystemState;
 import com.amazon.speech.ui.PlainTextOutputSpeech;
 import com.amazon.speech.ui.Reprompt;
 import com.amazon.speech.ui.SimpleCard;
+import org.apache.log4j.BasicConfigurator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
+
+    private Logger logger = LoggerFactory.getLogger(KinderliederSpeechlet.class);
 
     //////////////////////////////////
     // Speechlet methods
     //////////////////////////////////
     @Override
     public void onSessionStarted(SessionStartedRequest request, Session session) throws SpeechletException {
+        BasicConfigurator.configure();
 
+        DynamoDbService dynamoDbService = new DynamoDbService();
+        dynamoDbService.init();
     }
 
     @Override
@@ -49,7 +55,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
                 return stopResponse();
             case "AMAZON.PauseIntent":
                 // When currently playing an audio file, pause intent is invoked by "stop utterance" >:(
-                return stopPlaybackResponse();
+                return stopPlaybackResponse(request, session);
             case "AMAZON.HelpIntent":
                 return helpResponse();
             case "RandomSongIntent":
@@ -122,15 +128,22 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
     /**
      * Used when the audio stream is stopped by the stop directive.
      *
-     * @param requestEnvelope
-     *            the request envelope containing the playback nearly failed request to handle
+     * @param requestEnvelope the request envelope containing the playback nearly failed request to handle
      * @return
      */
     @Override
     public SpeechletResponse onPlaybackStopped(SpeechletRequestEnvelope<PlaybackStoppedRequest> requestEnvelope) {
 
-        // SystemState state = requestEnvelope.getContext().getState(SystemInterface.class, SystemState.class);
-        // storeOffset(state.getUser().getUserId(), requestEnvelope.getRequest().getOffsetInMilliseconds());
+        SystemState state = requestEnvelope.getContext().getState(SystemInterface.class, SystemState.class);
+
+        DynamoDbService dynamoDbService = new DynamoDbService();
+        try {
+            dynamoDbService.updateSession(state.getUser().getUserId(),
+                    requestEnvelope.getRequest().getOffsetInMilliseconds(), requestEnvelope.getRequest().getToken(),
+                    "999");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         return null;
     }
@@ -170,7 +183,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
         AudioFileReference audioFileReference = new AudioFileReference();
         List<String> songTitles = new ArrayList<>();
-        for(int i = 0; i < 14; i++) {
+        for (int i = 0; i < 14; i++) {
             songTitles.add(audioFileReference.getNameOfSong(i));
         }
         card.setContent(songTitles.toString());
@@ -289,7 +302,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         return response;
     }
 
-    private SpeechletResponse stopPlaybackResponse() {
+    private SpeechletResponse stopPlaybackResponse(IntentRequest request, Session session) {
 
         String speechText = "Okay, Wiedergabe angehalten.";
         // Create the plain text output.
