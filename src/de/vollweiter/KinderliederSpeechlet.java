@@ -35,7 +35,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
         DynamoDbService dynamoDbService = new DynamoDbService();
         dynamoDbService.init();
-    }
+}
 
     @Override
     public SpeechletResponse onLaunch(LaunchRequest request, Session session) throws SpeechletException {
@@ -134,17 +134,17 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
     @Override
     public SpeechletResponse onPlaybackStopped(SpeechletRequestEnvelope<PlaybackStoppedRequest> requestEnvelope) {
 
-        SystemState state = requestEnvelope.getContext().getState(SystemInterface.class, SystemState.class);
+        logger.info("Stoppppped");
+        /*SystemState state = requestEnvelope.getContext().getState(SystemInterface.class, SystemState.class);
 
         DynamoDbService dynamoDbService = new DynamoDbService();
         try {
-            dynamoDbService.updateSession(state.getUser().getUserId(),
-                    requestEnvelope.getRequest().getOffsetInMilliseconds(), requestEnvelope.getRequest().getToken(),
-                    "999");
+            dynamoDbService.updateSession(state.getUser().getUserId(), requestEnvelope.getRequest()
+                    .getOffsetInMilliseconds(), requestEnvelope.getRequest().getToken(), "123");
         } catch (Exception e) {
             e.printStackTrace();
         }
-
+*/
         return null;
     }
 
@@ -316,6 +316,13 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         SpeechletResponse response = new SpeechletResponse();
         response.setDirectives(directives);
         response.setOutputSpeech(speech);
+
+        DynamoDbService dynamoDbService = new DynamoDbService();
+        try {
+            dynamoDbService.updateSession(session.getUser().getUserId(), 333, "1234", "12");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         return response;
     }

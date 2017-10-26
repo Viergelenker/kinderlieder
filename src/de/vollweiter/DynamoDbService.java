@@ -24,19 +24,26 @@ public class DynamoDbService {
 
     private AmazonDynamoDB database;
     private DynamoDBMapper mapper;
+    private DynamoDB dynamoDB;
+
+    private final String DATABASE_TABLE_NAME = "USER_SESSION";
 
     public void init() {
 
         database = AmazonDynamoDBClientBuilder.standard()
                 .withRegion(Regions.EU_WEST_1)
                 .build();
+
+        dynamoDB = new DynamoDB(database);
     }
 
     public void updateSession(String userId, long offset, String token, String previousToken) throws Exception {
 
         logger.info("Updating user session...");
 
-        mapper = new DynamoDBMapper(database);
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
+
+        DynamoDBMapper mapper = new DynamoDBMapper(client);
 
         UserSession item = new UserSession();
         item.setUserId(userId);
