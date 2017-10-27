@@ -43,6 +43,7 @@ public class AudioFileReference {
 
     public List<String> getAllAudioFiles() {
         List<String> audioFilesList = new ArrayList<>();
+
         audioFilesList.add(alleMeineEntchen);
         audioFilesList.add(alleVoegelSindSchonDa);
         audioFilesList.add(aufDerMauer);
@@ -70,7 +71,7 @@ public class AudioFileReference {
     }
 
     public String getRandomAudioFile() {
-        return getAllAudioFiles().get(getRandomInt(0, getAllAudioFiles().size()));
+        return getAllAudioFiles().get(getRandomInt(0, (getAllAudioFiles().size()-1)));
     }
 
     public String getSpecificAudioFile(int songNumber) throws SpeechletException {

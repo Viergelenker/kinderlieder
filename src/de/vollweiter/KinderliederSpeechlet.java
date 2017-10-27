@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
@@ -32,6 +33,8 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
     @Override
     public void onSessionStarted(SessionStartedRequest request, Session session) throws SpeechletException {
         BasicConfigurator.configure();
+
+        logger.info("Session started");
 
         DynamoDbService dynamoDbService = new DynamoDbService();
         dynamoDbService.init();
@@ -55,7 +58,9 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
                 return stopResponse();
             case "AMAZON.PauseIntent":
                 // When currently playing an audio file, pause intent is invoked by "stop utterance" >:(
-                return stopPlaybackResponse(request, session);
+                return stopPlaybackResponse();
+            case "AMAZON.ResumeIntent":
+                return resumeRequest(session);
             case "AMAZON.HelpIntent":
                 return helpResponse();
             case "RandomSongIntent":
@@ -134,17 +139,19 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
     @Override
     public SpeechletResponse onPlaybackStopped(SpeechletRequestEnvelope<PlaybackStoppedRequest> requestEnvelope) {
 
-        logger.info("Stoppppped");
-        /*SystemState state = requestEnvelope.getContext().getState(SystemInterface.class, SystemState.class);
+        SystemState state = requestEnvelope.getContext().getState(SystemInterface.class, SystemState.class);
 
         DynamoDbService dynamoDbService = new DynamoDbService();
         try {
-            dynamoDbService.updateSession(state.getUser().getUserId(), requestEnvelope.getRequest()
-                    .getOffsetInMilliseconds(), requestEnvelope.getRequest().getToken(), "123");
+            dynamoDbService.updateSession(state.getUser().getUserId(),
+                    requestEnvelope.getRequest().getOffsetInMilliseconds(),
+                    requestEnvelope.getRequest().getToken(),
+                    requestEnvelope.getRequest().getToken());
         } catch (Exception e) {
             e.printStackTrace();
         }
-*/
+
+        logger.info("Playback stopped");
         return null;
     }
 
@@ -237,13 +244,15 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         speech.setText(speechText);
 
         Stream stream = new Stream();
-        stream.setToken("1234");
+        String url = "empty";
         try {
-            stream.setUrl(new AudioFileReference().getSpecificAudioFile(songNumber));
+            url = new AudioFileReference().getSpecificAudioFile(songNumber);
         } catch (SpeechletException e) {
             e.printStackTrace();
         }
+        stream.setUrl(url);
         stream.setOffsetInMilliseconds(0);
+        stream.setToken(url);
 
         AudioItem audioItem = new AudioItem();
         audioItem.setStream(stream);
@@ -279,8 +288,9 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         speech.setText(speechText);
 
         Stream stream = new Stream();
-        stream.setToken("1234");
-        stream.setUrl(new AudioFileReference().getRandomAudioFile());
+        String url = new AudioFileReference().getRandomAudioFile();
+        stream.setToken(url);
+        stream.setUrl(url);
         stream.setOffsetInMilliseconds(0);
 
         AudioItem audioItem = new AudioItem();
@@ -302,7 +312,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         return response;
     }
 
-    private SpeechletResponse stopPlaybackResponse(IntentRequest request, Session session) {
+    private SpeechletResponse stopPlaybackResponse() {
 
         String speechText = "Okay, Wiedergabe angehalten.";
         // Create the plain text output.
@@ -316,13 +326,6 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         SpeechletResponse response = new SpeechletResponse();
         response.setDirectives(directives);
         response.setOutputSpeech(speech);
-
-        DynamoDbService dynamoDbService = new DynamoDbService();
-        try {
-            dynamoDbService.updateSession(session.getUser().getUserId(), 333, "1234", "12");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
         return response;
     }
@@ -361,6 +364,40 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         reprompt.setOutputSpeech(speech);
 
         return SpeechletResponse.newAskResponse(speech, reprompt, card);
+    }
+
+    private SpeechletResponse resumeRequest(Session session) {
+
+        UserSession userSession = null;
+        try {
+            userSession = new DynamoDbService().getUserSession(session.getUser().getUserId());
+        } catch (Exception e) {
+            logger.error("Unable to obtain userSession Object.");
+        }
+
+        Stream stream = new Stream();
+        stream.setUrl(userSession.getToken());
+        stream.setOffsetInMilliseconds(userSession.getOffset());
+        stream.setToken(userSession.getToken());
+
+        logger.info("Stream ready" + stream.toString());
+
+        AudioItem audioItem = new AudioItem();
+        audioItem.setStream(stream);
+
+        PlayDirective playDirective = new PlayDirective();
+        playDirective.setAudioItem(audioItem);
+        playDirective.setPlayBehavior(PlayBehavior.REPLACE_ALL);
+
+        logger.info("Play directive set up");
+
+        List<Directive> directives = new ArrayList<>();
+        directives.add(playDirective);
+
+        SpeechletResponse response = new SpeechletResponse();
+        response.setDirectives(directives);
+        response.setNullableShouldEndSession(true);
+        return response;
     }
 
 }

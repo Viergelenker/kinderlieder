@@ -56,27 +56,14 @@ public class DynamoDbService {
 
     public UserSession getUserSession(String userId) throws Exception {
 
-        UserSession userSession = new UserSession();
-        userSession.setUserId(userId);
+        logger.info("Trying to get userSession values...");
 
-        DynamoDBQueryExpression<UserSession> queryExpression = new DynamoDBQueryExpression<UserSession>()
-                .withHashKeyValues(userSession);
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
 
-        List<UserSession> itemList = mapper.query(UserSession.class, queryExpression);
+        DynamoDBMapper mapper = new DynamoDBMapper(client);
 
-        logger.info("Reading values...");
+        UserSession userSession = mapper.load(UserSession.class, userId);
 
-        for (int i = 0; i < itemList.size(); i++) {
-            logger.info(itemList.get(i).getUserId());
-            logger.info(String.valueOf(itemList.get(i).getOffset()));
-            logger.info(itemList.get(i).getToken());
-            logger.info(itemList.get(i).getPreviousToken());
-
-        }
-
-        userSession.setOffset(itemList.get(1).getOffset());
-        userSession.setToken(itemList.get(2).getToken());
-        userSession.setPreviousToken(itemList.get(3).getPreviousToken());
         return userSession;
     }
 }
