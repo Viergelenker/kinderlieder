@@ -2,9 +2,7 @@ package de.vollweiter;
 
 import com.amazon.speech.speechlet.SpeechletException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class AudioFileReference {
 
@@ -41,8 +39,8 @@ public class AudioFileReference {
     private final String einMaennleinStehtImWaldeTitle = "Ein Männlein steht im Walde";
 
 
-    public List<String> getAllAudioFiles() {
-        List<String> audioFilesList = new ArrayList<>();
+    public LinkedList<String> getAllAudioFiles() {
+        LinkedList<String> audioFilesList = new LinkedList<>();
 
         audioFilesList.add(alleMeineEntchen);
         audioFilesList.add(alleVoegelSindSchonDa);
@@ -63,15 +61,11 @@ public class AudioFileReference {
         return audioFilesList;
     }
 
-    private int getRandomInt(int min, int max) {
-        Random random = new Random();
-        int randomInt = random.nextInt((max - min) + 1) + min;
-
-        return randomInt;
-    }
-
-    public String getRandomAudioFile() {
-        return getAllAudioFiles().get(getRandomInt(0, (getAllAudioFiles().size()-1)));
+    public LinkedList<String> getRandomAudioFileList() {
+        LinkedList<String> audioFiles = new LinkedList<>();
+        audioFiles = getAllAudioFiles();
+        Collections.shuffle(audioFiles);
+        return audioFiles;
     }
 
     public String getSpecificAudioFile(int songNumber) throws SpeechletException {

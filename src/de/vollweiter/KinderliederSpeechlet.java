@@ -20,8 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 
 public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
@@ -63,38 +63,40 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
                 return resumeRequest(session);
             case "AMAZON.HelpIntent":
                 return helpResponse();
+            case "AMAZON.NextIntent":
+                return getNextSongResponse(session);
             case "RandomSongIntent":
-                return playRandomSong();
+                return playRandomSong(session);
             case "EntenIntent":
-                return playSpecificSong(0);
+                return playSpecificSong(0, session);
             case "VoegelIntent":
-                return playSpecificSong(1);
+                return playSpecificSong(1, session);
             case "MauerIntent":
-                return playSpecificSong(2);
+                return playSpecificSong(2, session);
             case "WiesenIntent":
-                return playSpecificSong(3);
+                return playSpecificSong(3, session);
             case "KuchenIntent":
-                return playSpecificSong(4);
+                return playSpecificSong(4, session);
             case "JakobIntent":
-                return playSpecificSong(5);
+                return playSpecificSong(5, session);
             case "WandernIntent":
-                return playSpecificSong(6);
+                return playSpecificSong(6, session);
             case "KuckuckIntent":
-                return playSpecificSong(7);
+                return playSpecificSong(7, session);
             case "AffenIntent":
-                return playSpecificSong(8);
+                return playSpecificSong(8, session);
             case "MondIntent":
-                return playSpecificSong(9);
+                return playSpecificSong(9, session);
             case "GedankenIntent":
-                return playSpecificSong(10);
+                return playSpecificSong(10, session);
             case "HandwerkerIntent":
-                return playSpecificSong(11);
+                return playSpecificSong(11, session);
             case "VogelhochzeitIntent":
-                return playSpecificSong(12);
+                return playSpecificSong(12, session);
             case "ChinesenIntent":
-                return playSpecificSong(13);
+                return playSpecificSong(13, session);
             case "MaennleinIntent":
-                return playSpecificSong(14);
+                return playSpecificSong(14, session);
             default:
                 throw new SpeechletException("Invalid Intent");
 
@@ -116,7 +118,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
     @Override
     public SpeechletResponse onPlaybackFinished(SpeechletRequestEnvelope<PlaybackFinishedRequest> requestEnvelope) {
-        getNextSongResponse();
+        getNextSongResponse(requestEnvelope.getSession());
         return null;
     }
 
@@ -146,7 +148,8 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
             dynamoDbService.updateSession(state.getUser().getUserId(),
                     requestEnvelope.getRequest().getOffsetInMilliseconds(),
                     requestEnvelope.getRequest().getToken(),
-                    requestEnvelope.getRequest().getToken());
+                    requestEnvelope.getRequest().getToken(),
+                    dynamoDbService.getUserSession(state.getUser().getUserId()).getSongQueue());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -208,29 +211,52 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         return SpeechletResponse.newAskResponse(speech, reprompt, card);
     }
 
-    private SpeechletResponse getNextSongResponse() {
-        String speechText = "Welches Lied möchtest du jetzt hören?";
-        String repromptText = "Sag einfach zufälliges Lied oder den Namen eines bestimmten.";
+    private SpeechletResponse getNextSongResponse(Session session) {
 
-        // Create the Simple card content with the repromt text.
-        SimpleCard card = new SimpleCard();
-        card.setTitle("Kinderlieder");
-        card.setContent(repromptText);
+        Stream stream = new Stream();
+        String url = "empty";
 
-        // Create the plain text output.
-        PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
-        speech.setText(speechText);
-        PlainTextOutputSpeech repromptOutput = new PlainTextOutputSpeech();
-        repromptOutput.setText(repromptText);
+        UserSession userSession = null;
 
-        // Create reprompt
-        Reprompt reprompt = new Reprompt();
-        reprompt.setOutputSpeech(repromptOutput);
+        try {
+            userSession = new DynamoDbService().getUserSession(session.getUser().getUserId());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-        return SpeechletResponse.newAskResponse(speech, reprompt, card);
+
+        stream.setUrl(userSession.getSongQueue().get(userSession.getSongQueue().size()-1));
+        stream.setOffsetInMilliseconds(userSession.getSongQueue().size()-1);
+        stream.setToken(userSession.getSongQueue().get(userSession.getSongQueue().size()-1));
+
+        List<String> songs = userSession.getSongQueue();
+        songs.remove(userSession.getSongQueue().size()-1);
+
+        try {
+            new DynamoDbService().updateSession(session.getUser().getUserId(), 0, url, url, songs);
+        } catch (Exception e) {
+            logger.warn(e.getMessage()  );
+        }
+
+        AudioItem audioItem = new AudioItem();
+        audioItem.setStream(stream);
+
+        PlayDirective playDirective = new PlayDirective();
+        playDirective.setAudioItem(audioItem);
+        playDirective.setPlayBehavior(PlayBehavior.REPLACE_ALL);
+
+
+        List<Directive> directives = new ArrayList<>();
+        directives.add(playDirective);
+
+        SpeechletResponse response = new SpeechletResponse();
+        response.setDirectives(directives);
+        response.setNullableShouldEndSession(true);
+
+        return response;
     }
 
-    private SpeechletResponse playSpecificSong(int songNumber) {
+    private SpeechletResponse playSpecificSong(int songNumber, Session session) {
 
         String speechText = "Viel Spaß mit dem Lied";
 
@@ -254,6 +280,15 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         stream.setOffsetInMilliseconds(0);
         stream.setToken(url);
 
+        LinkedList<String> songs = new AudioFileReference().getRandomAudioFileList();
+        songs.removeFirstOccurrence(url);
+
+        try {
+            new DynamoDbService().updateSession(session.getUser().getUserId(), 0, url, url, songs);
+        } catch (Exception e) {
+            logger.warn(e.getMessage()  );
+        }
+
         AudioItem audioItem = new AudioItem();
         audioItem.setStream(stream);
 
@@ -274,7 +309,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         return response;
     }
 
-    private SpeechletResponse playRandomSong() {
+    private SpeechletResponse playRandomSong(Session session) {
 
         String speechText = "Zufälliges Lied ausgewählt";
 
@@ -287,11 +322,21 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
         speech.setText(speechText);
 
+        LinkedList<String> songs = new AudioFileReference().getRandomAudioFileList();
+
         Stream stream = new Stream();
-        String url = new AudioFileReference().getRandomAudioFile();
+        String url = songs.get(0);
         stream.setToken(url);
         stream.setUrl(url);
         stream.setOffsetInMilliseconds(0);
+
+        songs.removeFirst();
+
+        try {
+            new DynamoDbService().updateSession(session.getUser().getUserId(), 0, url, url, songs);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+        }
 
         AudioItem audioItem = new AudioItem();
         audioItem.setStream(stream);

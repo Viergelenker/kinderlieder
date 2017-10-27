@@ -37,7 +37,7 @@ public class DynamoDbService {
         dynamoDB = new DynamoDB(database);
     }
 
-    public void updateSession(String userId, long offset, String token, String previousToken) throws Exception {
+    public void updateSession(String userId, long offset, String token, String previousToken, List<String> songQueue) throws Exception {
 
         logger.info("Updating user session...");
 
@@ -50,6 +50,7 @@ public class DynamoDbService {
         item.setOffset(offset);
         item.setToken(token);
         item.setPreviousToken(previousToken);
+        item.setSongQueue(songQueue);
 
         mapper.save(item);
     }

@@ -4,6 +4,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
+import java.util.List;
 import java.util.Set;
 
 @DynamoDBTable(tableName = "USER_SESSION")
@@ -13,6 +14,7 @@ public class UserSession {
     private long offset;
     private String token;
     private String previousToken;
+    private List<String> songQueue;
 
     @DynamoDBHashKey(attributeName = "USER_ID")
     public String getUserId() {
@@ -48,5 +50,14 @@ public class UserSession {
 
     public void setPreviousToken(String previousToken) {
         this.previousToken = previousToken;
+    }
+
+    @DynamoDBAttribute(attributeName = "SONG_QUEUE")
+    public List<String> getSongQueue() {
+        return songQueue;
+    }
+
+    public void setSongQueue(List<String> songQueue) {
+        this.songQueue = songQueue;
     }
 }
