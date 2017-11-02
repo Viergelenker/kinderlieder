@@ -118,17 +118,29 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
     @Override
     public SpeechletResponse onPlaybackFinished(SpeechletRequestEnvelope<PlaybackFinishedRequest> requestEnvelope) {
-        getNextSongResponse(requestEnvelope.getSession());
         return null;
     }
 
     @Override
     public SpeechletResponse onPlaybackNearlyFinished(SpeechletRequestEnvelope<PlaybackNearlyFinishedRequest> requestEnvelope) {
-        return null;
+        logger.info("Playback nearly finished");
+        return queueNextSong(requestEnvelope);
     }
 
     @Override
     public SpeechletResponse onPlaybackStarted(SpeechletRequestEnvelope<PlaybackStartedRequest> requestEnvelope) {
+
+        SystemState state = requestEnvelope.getContext().getState(SystemInterface.class, SystemState.class);
+
+        try {
+            new DynamoDbService().updateSession(state.getUser().getUserId(),
+                    requestEnvelope.getRequest().getOffsetInMilliseconds(),
+                    requestEnvelope.getRequest().getToken(),
+                    requestEnvelope.getRequest().getToken(),
+                    new DynamoDbService().getUserSession(state.getUser().getUserId()).getSongQueue());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
@@ -163,7 +175,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
     //////////////////////////////////
     private SpeechletResponse getWelcomeResponse() {
         String speechText = "Hallo! Welches Lied möchtest du hören?";
-        String repromptText = "Sag einfach zufälliges Lied oder den Namen eines bestimmten.";
+        String repromptText = "Sag einfach zufälliges Lied oder den Namen eines Bestimmten.";
 
         // Create the Simple card content with the repromt text.
         SimpleCard card = new SimpleCard();
@@ -211,12 +223,76 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         return SpeechletResponse.newAskResponse(speech, reprompt, card);
     }
 
+    private SpeechletResponse queueNextSong(SpeechletRequestEnvelope<PlaybackNearlyFinishedRequest> requestEnvelope) {
+
+        SystemState state = requestEnvelope.getContext().getState(SystemInterface.class, SystemState.class);
+
+        logger.info("Queue next song");
+
+        UserSession userSession = null;
+
+        try {
+            userSession = new DynamoDbService().getUserSession(state.getUser().getUserId());
+        } catch (Exception e) {
+            logger.error("Unable to obtain userSession Object.");
+        }
+
+        logger.info("User session obtained");
+
+        if (userSession.getSongQueue().isEmpty()) {
+
+            return null;
+        } else {
+
+            String url = null;
+            // Don't worry about this line, i just use the last object of my songList because it's cheaper to remove than the first entry.
+            url = userSession.getSongQueue().get(userSession.getSongQueue().size() - 1);
+
+            Stream stream = new Stream();
+            stream.setUrl(url);
+            stream.setOffsetInMilliseconds(0);
+            stream.setExpectedPreviousToken(requestEnvelope.getRequest().getToken());
+            stream.setToken(url);
+
+            logger.info("Removing current song from list");
+            List<String> songs = userSession.getSongQueue();
+            songs.remove(userSession.getSongQueue().size() - 1);
+
+            logger.info("Update the new session");
+            try {
+                new DynamoDbService().updateSession(state.getUser().getUserId(), 0, url,
+                        requestEnvelope.getRequest().getToken(), songs);
+            } catch (Exception e) {
+                logger.warn(e.getMessage());
+            }
+
+            AudioItem audioItem = new AudioItem();
+            audioItem.setStream(stream);
+
+            PlayDirective playDirective = new PlayDirective();
+            playDirective.setAudioItem(audioItem);
+            playDirective.setPlayBehavior(PlayBehavior.ENQUEUE);
+
+            List<Directive> directives = new ArrayList<>();
+            directives.add(playDirective);
+
+            SpeechletResponse response = new SpeechletResponse();
+            response.setDirectives(directives);
+            // response.setNullableShouldEndSession(true);
+
+            logger.info("Return enqueue response");
+            return response;
+        }
+    }
+
     private SpeechletResponse getNextSongResponse(Session session) {
 
         Stream stream = new Stream();
         String url = "empty";
 
         UserSession userSession = null;
+
+        logger.info("Getting next song...");
 
         try {
             userSession = new DynamoDbService().getUserSession(session.getUser().getUserId());
@@ -225,35 +301,56 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         }
 
 
-        stream.setUrl(userSession.getSongQueue().get(userSession.getSongQueue().size()-1));
-        stream.setOffsetInMilliseconds(userSession.getSongQueue().size()-1);
-        stream.setToken(userSession.getSongQueue().get(userSession.getSongQueue().size()-1));
+        if (userSession.getSongQueue().isEmpty()) {
 
-        List<String> songs = userSession.getSongQueue();
-        songs.remove(userSession.getSongQueue().size()-1);
+            logger.info("Song list empty");
+            String speechText = "Tut mir Leid, das waren alle Lieder. Starte die Wiedergabe erneut mit einem zufälligen," +
+                    " oder nenne mir ein bestimmtes Lied.";
+            String repromptText = "Sag einfach zufälliges Lied oder den Namen eines bestimmten Liedes.";
 
-        try {
-            new DynamoDbService().updateSession(session.getUser().getUserId(), 0, url, url, songs);
-        } catch (Exception e) {
-            logger.warn(e.getMessage()  );
+            // Create the plain text output.
+            PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
+            speech.setText(speechText);
+            PlainTextOutputSpeech repromptOutput = new PlainTextOutputSpeech();
+            repromptOutput.setText(repromptText);
+
+            // Create reprompt
+            Reprompt reprompt = new Reprompt();
+            reprompt.setOutputSpeech(repromptOutput);
+
+            return SpeechletResponse.newAskResponse(speech, reprompt);
+
+        } else {
+            stream.setUrl(userSession.getSongQueue().get(userSession.getSongQueue().size() - 1));
+            stream.setOffsetInMilliseconds(userSession.getSongQueue().size() - 1);
+            stream.setToken(userSession.getSongQueue().get(userSession.getSongQueue().size() - 1));
+
+            List<String> songs = userSession.getSongQueue();
+            songs.remove(userSession.getSongQueue().size() - 1);
+
+            try {
+                new DynamoDbService().updateSession(session.getUser().getUserId(), 0, url, url, songs);
+            } catch (Exception e) {
+                logger.warn(e.getMessage());
+            }
+
+            AudioItem audioItem = new AudioItem();
+            audioItem.setStream(stream);
+
+            PlayDirective playDirective = new PlayDirective();
+            playDirective.setAudioItem(audioItem);
+            playDirective.setPlayBehavior(PlayBehavior.REPLACE_ALL);
+
+
+            List<Directive> directives = new ArrayList<>();
+            directives.add(playDirective);
+
+            SpeechletResponse response = new SpeechletResponse();
+            response.setDirectives(directives);
+            response.setNullableShouldEndSession(true);
+
+            return response;
         }
-
-        AudioItem audioItem = new AudioItem();
-        audioItem.setStream(stream);
-
-        PlayDirective playDirective = new PlayDirective();
-        playDirective.setAudioItem(audioItem);
-        playDirective.setPlayBehavior(PlayBehavior.REPLACE_ALL);
-
-
-        List<Directive> directives = new ArrayList<>();
-        directives.add(playDirective);
-
-        SpeechletResponse response = new SpeechletResponse();
-        response.setDirectives(directives);
-        response.setNullableShouldEndSession(true);
-
-        return response;
     }
 
     private SpeechletResponse playSpecificSong(int songNumber, Session session) {
