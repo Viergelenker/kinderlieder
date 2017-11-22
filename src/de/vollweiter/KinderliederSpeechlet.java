@@ -180,7 +180,13 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
         // Create the Simple card content with the repromt text.
         SimpleCard card = new SimpleCard();
         card.setTitle("Kinderlieder");
-        card.setContent(repromptText);
+
+        AudioFileReference audioFileReference = new AudioFileReference();
+        List<String> songTitles = new ArrayList<>();
+        for (int i = 0; i < 14; i++) {
+            songTitles.add(audioFileReference.getNameOfSong(i));
+        }
+        card.setContent(repromptText + " " + songTitles.toString());
 
         // Create the plain text output.
         PlainTextOutputSpeech speech = new PlainTextOutputSpeech();

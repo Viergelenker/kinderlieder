@@ -12,6 +12,7 @@ public final class KinderliederRequestStreamHandler extends SpeechletRequestStre
 
     static {
         supportedApplicationIds.add("amzn1.ask.skill.8aa2a253-c283-4b89-b528-1084ea84dd70");
+        supportedApplicationIds.add("amzn1.ask.skill.69b79513-7176-4a11-89fb-91e0565ca14d");
     }
 
     public KinderliederRequestStreamHandler() {
