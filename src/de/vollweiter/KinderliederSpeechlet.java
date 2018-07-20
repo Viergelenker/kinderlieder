@@ -97,6 +97,8 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
                 return playSpecificSong(13, session);
             case "MaennleinIntent":
                 return playSpecificSong(14, session);
+            case "SchlafKindchenSchlafIntent":
+                return playSpecificSong( 15, session );
             default:
                 throw new SpeechletException("Invalid Intent");
 
@@ -183,7 +185,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
         AudioFileReference audioFileReference = new AudioFileReference();
         List<String> songTitles = new ArrayList<>();
-        for (int i = 0; i < 14; i++) {
+        for (int i = 0; i < 15; i++) {
             songTitles.add(audioFileReference.getNameOfSong(i));
         }
         card.setContent(repromptText + " " + songTitles.toString());
@@ -361,7 +363,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
     private SpeechletResponse playSpecificSong(int songNumber, Session session) {
 
-        String speechText = "Viel Spaß mit dem Lied";
+        String speechText = "Viel Spass mit dem Lied";
 
         // Create the Simple card content.
         SimpleCard card = new SimpleCard();

@@ -21,6 +21,7 @@ public class AudioFileReference {
     private final String dieVogelhochzeit = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/13_-_Kinder_wollen_singen_-_Die_Vogelhochzeit.mp3";
     private final String dreiChinesenMitDemKontrabass = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/14_-_Kinder_wollen_singen_-_3_Chinesen_mit_dem_Kontrabass.mp3";
     private final String einMaennleinStehtImWalde = "https://s3-eu-west-1.amazonaws.com/bucket-vollweiter/15_-_Kinder_wollen_singen_-_Ein_Maennlein_steht_im_Walde.mp3";
+    private final String schlafKindchenSchlaf = "http://www.kitalieder.de/fileadmin/kitalieder/mp3/SchlafKindchenSchlaf.mp3";
 
     private final String alleMeineEntchenTitle = "Alle meine Entchen";
     private final String alleVoegelSindSchonDaTitle = "Alle Vögel sind schon da";
@@ -37,6 +38,7 @@ public class AudioFileReference {
     private final String dieVogelhochzeitTitle = "Die Vogelhochzeit";
     private final String dreiChinesenMitDemKontrabassTitle = "Drei Chinesen mit dem Kontrabass";
     private final String einMaennleinStehtImWaldeTitle = "Ein Männlein steht im Walde";
+    private final String schlafKindchenSchlafTitle = "Schlaf Kindchen Schlaf";
 
 
     public LinkedList<String> getAllAudioFiles() {
@@ -57,12 +59,13 @@ public class AudioFileReference {
         audioFilesList.add(dieVogelhochzeit);
         audioFilesList.add(dreiChinesenMitDemKontrabass);
         audioFilesList.add(einMaennleinStehtImWalde);
+        audioFilesList.add(schlafKindchenSchlaf);
 
         return audioFilesList;
     }
 
     public LinkedList<String> getRandomAudioFileList() {
-        LinkedList<String> audioFiles = new LinkedList<>();
+        LinkedList<String> audioFiles;
         audioFiles = getAllAudioFiles();
         Collections.shuffle(audioFiles);
         return audioFiles;
@@ -101,6 +104,8 @@ public class AudioFileReference {
                 return dreiChinesenMitDemKontrabass;
             case 14:
                 return einMaennleinStehtImWalde;
+            case 15:
+                return schlafKindchenSchlaf;
             default:
                 throw new SpeechletException("Dieses Lied kenne ich nicht");
 
@@ -139,6 +144,8 @@ public class AudioFileReference {
                 return dreiChinesenMitDemKontrabassTitle;
             case 14:
                 return einMaennleinStehtImWaldeTitle;
+            case 15:
+                return schlafKindchenSchlafTitle;
             default:
                 return "Kein Titel";
         }
