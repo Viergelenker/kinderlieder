@@ -176,8 +176,8 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
     // Services
     //////////////////////////////////
     private SpeechletResponse getWelcomeResponse() {
-        String speechText = "Hallo! Welches Lied möchtest du hören?";
-        String repromptText = "Sag einfach zufälliges Lied oder den Namen eines Bestimmten.";
+        String speechText = "Hallo! Welches Lied moechtest du hoeren?";
+        String repromptText = "Sag einfach zufaelliges Lied oder den Namen eines Bestimmten.";
 
         // Create the Simple card content with the repromt text.
         SimpleCard card = new SimpleCard();
@@ -185,7 +185,7 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
         AudioFileReference audioFileReference = new AudioFileReference();
         List<String> songTitles = new ArrayList<>();
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 47; i++) {
             songTitles.add(audioFileReference.getNameOfSong(i));
         }
         card.setContent(repromptText + " " + songTitles.toString());
@@ -204,8 +204,8 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
     }
 
     private SpeechletResponse helpResponse() {
-        String speechText = "Die Namen aller Lieder findest du auf der Karte in der Alexa App. Sage zufälliges Lied oder den Namen von einem bestimmten.";
-        String repromptText = "Sag einfach zufälliges Lied oder den Namen eines bestimmten. Die Namen aller Lieder findest du in der Alexa App";
+        String speechText = "Die Namen aller Lieder findest du auf der Karte in der Alexa App. Sage zufaelliges Lied oder den Namen von einem Bestimmten.";
+        String repromptText = "Sag einfach zufaelliges Lied oder den Namen eines Bestimmten. Die Namen aller Lieder findest du in der Alexa App";
 
         // Create the Simple card content with the repromt text.
         SimpleCard card = new SimpleCard();
@@ -213,8 +213,9 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
         AudioFileReference audioFileReference = new AudioFileReference();
         List<String> songTitles = new ArrayList<>();
-        for (int i = 0; i < 14; i++) {
+        for (int i = 0; i < 47; i++) {
             songTitles.add(audioFileReference.getNameOfSong(i));
+            songTitles.add("\n");
         }
         card.setContent(songTitles.toString());
 
@@ -363,7 +364,9 @@ public class KinderliederSpeechlet implements Speechlet, AudioPlayer {
 
     private SpeechletResponse playSpecificSong(int songNumber, Session session) {
 
-        String speechText = "Viel Spass mit dem Lied";
+        AudioFileReference audioFileReference = new AudioFileReference();
+
+        String speechText = "Viel Spass mit dem Lied " + audioFileReference.getNameOfSong(songNumber);
 
         // Create the Simple card content.
         SimpleCard card = new SimpleCard();
